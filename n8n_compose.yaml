@@ -1,0 +1,91 @@
+version: "3.8"
+
+services:
+
+  n8n-web:
+    image: n8nio/n8n:latest
+    environment:
+      # DB
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=dokploy-postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=N8N_PASS
+
+      # Queue
+      - EXECUTIONS_MODE=queue
+      - QUEUE_BULL_REDIS_HOST=dokploy-redis
+      - QUEUE_BULL_REDIS_PORT=6379
+
+      # Seguridad / base
+      - N8N_ENCRYPTION_KEY=84c76790e2a559097fd0ba6ebde09cd196fac2a98fc00e559594784c25c902ba
+      - GENERIC_TIMEZONE=America/Argentina/Buenos_Aires
+
+      # Sin dominio (temporal)
+      - N8N_HOST=187.77.61.100
+      - N8N_PROTOCOL=http
+      - N8N_SECURE_COOKIE=false
+
+      # Data retention (muy recomendado)
+      - EXECUTIONS_DATA_SAVE_ON_SUCCESS=none
+      - EXECUTIONS_DATA_SAVE_ON_ERROR=all
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168
+      - EXECUTIONS_DATA_PRUNE_MAX_COUNT=10000
+
+      # Logs (útil para prod)
+      - N8N_LOG_LEVEL=info
+      - N8N_LOG_OUTPUT=console
+
+    ports:
+      - "5678:5678"
+
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+    networks:
+      - dokploy-network
+
+  n8n-worker:
+    image: n8nio/n8n:latest
+    command: worker
+    environment:
+      # DB
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=dokploy-postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=N8N_PASS
+
+      # Queue
+      - EXECUTIONS_MODE=queue
+      - QUEUE_BULL_REDIS_HOST=dokploy-redis
+      - QUEUE_BULL_REDIS_PORT=6379
+
+      # Seguridad / base
+      - N8N_ENCRYPTION_KEY=84c76790e2a559097fd0ba6ebde09cd196fac2a98fc00e559594784c25c902ba
+      - GENERIC_TIMEZONE=America/Argentina/Buenos_Aires
+
+      # Concurrencia (arrancá conservador)
+      - N8N_CONCURRENCY_PRODUCTION_LIMIT=8
+
+      # Data retention (mismo criterio)
+      - EXECUTIONS_DATA_SAVE_ON_SUCCESS=none
+      - EXECUTIONS_DATA_SAVE_ON_ERROR=all
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168
+      - EXECUTIONS_DATA_PRUNE_MAX_COUNT=10000
+
+      - N8N_LOG_LEVEL=info
+      - N8N_LOG_OUTPUT=console
+    networks:
+      - dokploy-network
+
+volumes:
+  n8n_data:
+
+networks:
+  dokploy-network:
+    external: true
